@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{78225FF9-A20C-47F7-80D5-C5EAD9923D88}|Common.csproj|c:\\users\\student-a502.permaviat\\desktop\\prac4\\common\\fileinfoftp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{78225FF9-A20C-47F7-80D5-C5EAD9923D88}|Common.csproj|solutionrelative:fileinfoftp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{78225FF9-A20C-47F7-80D5-C5EAD9923D88}|Common.csproj|c:\\users\\student-a502.permaviat\\desktop\\prac4\\common\\viewmodelmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{78225FF9-A20C-47F7-80D5-C5EAD9923D88}|Common.csproj|solutionrelative:viewmodelmessage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{78225FF9-A20C-47F7-80D5-C5EAD9923D88}|Common.csproj|c:\\users\\student-a502.permaviat\\desktop\\prac4\\common\\viewmodelsend.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{78225FF9-A20C-47F7-80D5-C5EAD9923D88}|Common.csproj|solutionrelative:viewmodelsend.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "FileInfoFTP.cs",
+              "DocumentMoniker": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\FileInfoFTP.cs",
+              "RelativeDocumentMoniker": "FileInfoFTP.cs",
+              "ToolTip": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\FileInfoFTP.cs",
+              "RelativeToolTip": "FileInfoFTP.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T09:44:59.425Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ViewModelMessage.cs",
+              "DocumentMoniker": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\ViewModelMessage.cs",
+              "RelativeDocumentMoniker": "ViewModelMessage.cs",
+              "ToolTip": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\ViewModelMessage.cs",
+              "RelativeToolTip": "ViewModelMessage.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T09:43:18.878Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ViewModelSend.cs",
+              "DocumentMoniker": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\ViewModelSend.cs",
+              "RelativeDocumentMoniker": "ViewModelSend.cs",
+              "ToolTip": "C:\\Users\\student-a502.PERMAVIAT\\Desktop\\Prac4\\Common\\ViewModelSend.cs",
+              "RelativeToolTip": "ViewModelSend.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-06T09:42:31.803Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
