@@ -134,6 +134,7 @@ namespace Client
                         int bytesRec = socket.Receive(bytes);
                         string messageServer = Encoding.UTF8.GetString(bytes, 0, bytesRec);
                         ViewModelMessage viewModelMessage = JsonConvert.DeserializeObject<ViewModelMessage>(messageServer);
+
                         if (viewModelMessage.Command == "autorization")
                             Id = int.Parse(viewModelMessage.Data);
                         else if (viewModelMessage.Command == "message")

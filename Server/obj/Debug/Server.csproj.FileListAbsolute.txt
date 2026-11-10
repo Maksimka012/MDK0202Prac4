@@ -1,0 +1,12 @@
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Server.exe.config
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Server.exe
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Server.pdb
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Common.dll
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Newtonsoft.Json.dll
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Common.pdb
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\Newtonsoft.Json.xml
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.csproj.AssemblyReference.cache
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.csproj.CoreCompileInputs.cache
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.csproj.Up2Date
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.exe
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.pdb

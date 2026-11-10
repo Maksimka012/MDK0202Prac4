@@ -171,7 +171,7 @@ namespace Server
         }
         static void Main(string[] args)
         {
-            Users.Add(new User("aoshcepkov", "Asdfg123", @"A:\Авиатехникум"));
+            Users.Add(new User("aoshcepkov", "Asdfg123", @"C:\Users\kotyl\Desktop"));
             Console.Write("Введите IP адрес сервера: ");
             string sIpAddress = Console.ReadLine();
             Console.Write($"Введите порт: ");
