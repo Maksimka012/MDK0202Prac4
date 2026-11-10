@@ -10,3 +10,5 @@ C:\Users\kotyl\Desktop\MDK0202Prac4\Client\obj\Debug\Client.csproj.CoreCompileIn
 C:\Users\kotyl\Desktop\MDK0202Prac4\Client\obj\Debug\Client.csproj.Up2Date
 C:\Users\kotyl\Desktop\MDK0202Prac4\Client\obj\Debug\Client.exe
 C:\Users\kotyl\Desktop\MDK0202Prac4\Client\obj\Debug\Client.pdb
+C:\Users\kotyl\Desktop\MDK0202Prac4\Client\bin\Debug\System.Data.SQLite.dll
+C:\Users\kotyl\Desktop\MDK0202Prac4\Client\bin\Debug\System.Data.SQLite.xml

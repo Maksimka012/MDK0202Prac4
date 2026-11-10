@@ -33,47 +33,36 @@ namespace ClientWPF
         public MainWindow()
         {
             InitializeComponent();
-
-            
-        }
-
-        public static void ConnectServer()
-        {
-            try
-            {
-                IPEndPoint endPoint = new IPEndPoint(IpAddres, Port);
-                Socket socket = new Socket(
-                    AddressFamily.InterNetwork,
-                    SocketType.Stream,
-                    ProtocolType.Tcp);
-                socket.Connect(endPoint);
-                if(socket.Connected)
-                {
-
-                }
-            }
-            catch(Exception ex)
-            {
-
-            }
         }
 
         private void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
-            string sIpAddres = tbIp.Text;
-            string sPort = tbPort.Text;
-
-            if (int.TryParse(sPort, out Port) && IPAddress.TryParse(sIpAddres, out IpAddres))
+            try
             {
-                MessageBox.Show("Данные успешно введены. Подключаюсь к серверу.");
-                IPEndPoint endPoint = new IPEndPoint(IpAddres, Port);
-                socket = new Socket(
-                    AddressFamily.InterNetwork,
-                    SocketType.Stream,
-                    ProtocolType.Tcp);
-                socket.Connect(endPoint);
-                Send($"connect {sIpAddres} {sPort}");
+                string sIpAddres = tbIp.Text;
+                string sPort = tbPort.Text;
+
+                if (int.TryParse(sPort, out Port) && IPAddress.TryParse(sIpAddres, out IpAddres))
+                {
+                    MessageBox.Show("Данные успешно введены. Подключаюсь к серверу.");
+                    IPEndPoint endPoint = new IPEndPoint(IpAddres, Port);
+                    socket = new Socket(
+                        AddressFamily.InterNetwork,
+                        SocketType.Stream,
+                        ProtocolType.Tcp);
+                    socket.Connect(endPoint);
+                    if (socket.Connected)
+                    {
+                        MessageBox.Show("Подключение не удалось(");
+                        Send($"connect {sIpAddres} {sPort}");
+                    }
+                }
             }
+            catch (Exception exp)
+            {
+                MessageBox.Show("Что-то случилось: " + exp.Message);
+            }
+            
         }
 
         private void BtnBack_Click(object sender, RoutedEventArgs e)

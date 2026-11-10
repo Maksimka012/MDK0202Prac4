@@ -173,8 +173,9 @@ namespace Server
                             {
                                 try
                                 {
+                                    string jsonPart = ViewModelSend.Message.Substring(4).Trim();
                                     // Клиент должен прислать JSON с данными файла
-                                    FileInfoFTP SendFileInfo = JsonConvert.DeserializeObject<FileInfoFTP>(ViewModelSend.Message);
+                                    FileInfoFTP SendFileInfo = JsonConvert.DeserializeObject<FileInfoFTP>(jsonPart);
                                     if (SendFileInfo != null)
                                     {
                                         string savePath = Path.Combine(UserSessions[ViewModelSend.Id], SendFileInfo.Name);
@@ -186,9 +187,10 @@ namespace Server
                                         viewModelMessage = new ViewModelMessage("message", "Ошибка формата данных файла");
                                     }
                                 }
-                                catch
+                                catch (Exception ex)
                                 {
                                     viewModelMessage = new ViewModelMessage("message", "Ошибка загрузки файла (неверный формат JSON)");
+                                    Console.WriteLine("ОШИБКА: " + ex.Message);
                                 }
                             }
                             else
@@ -224,7 +226,7 @@ namespace Server
             Database.Initialize();
 
             // 2. Добавляем пользователя в БД. Если он уже есть — ничего не произойдет.
-            string rootPath = @"C:\Users\kotyl\Desktop\MDK0202Prac4";
+            string rootPath = @"C:\Users\kotyl\Desktop";
 
             // Проверка на существование папки, чтобы не было ошибок
             if (!Directory.Exists(rootPath))
@@ -232,7 +234,7 @@ namespace Server
                 Console.WriteLine($"ВНИМАНИЕ: Папка {rootPath} не существует.");
             }
 
-            Database.AddUser("aoshcepkov", "Asdfg123", rootPath);
+            Database.AddUser("nasty", "Asdfg123", rootPath);
 
             Console.Write("Введите IP адрес сервера: ");
             string sIpAddress = Console.ReadLine();

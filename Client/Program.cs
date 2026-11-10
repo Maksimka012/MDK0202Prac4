@@ -118,7 +118,7 @@ namespace Client
                             {
                                 FileInfo fileInfo = new FileInfo(NameFile);
                                 FileInfoFTP newFileInfo = new FileInfoFTP(File.ReadAllBytes(NameFile), fileInfo.Name);
-                                viewModelSend = new ViewModelSend(JsonConvert.SerializeObject(newFileInfo), Id);
+                                viewModelSend = new ViewModelSend($"set {JsonConvert.SerializeObject(newFileInfo)}", Id);
                             }
                             else
                             {

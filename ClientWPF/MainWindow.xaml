@@ -17,9 +17,9 @@
             <TextBlock Text="IP:" VerticalAlignment="Center"/>
             <TextBox x:Name="tbIp" Width="100" Text="127.0.0.1" Margin="5,0"/>
             <TextBlock Text="Port:" VerticalAlignment="Center"/>
-            <TextBox x:Name="tbPort" Width="50" Text="8888" Margin="5,0"/>
+            <TextBox x:Name="tbPort" Width="50" Text="5000" Margin="5,0"/>
             <TextBlock Text="Login:" VerticalAlignment="Center"/>
-            <TextBox x:Name="tbLogin" Width="100" Text="aoshcepkov" Margin="5,0"/>
+            <TextBox x:Name="tbLogin" Width="100" Text="nasty" Margin="5,0"/>
             <TextBlock Text="Pass:" VerticalAlignment="Center"/>
             <PasswordBox x:Name="tbPass" Width="100" Password="Asdfg123" Margin="5,0"/>
             <Button Content="Подключиться" Click="BtnConnect_Click" Margin="5,0"/>

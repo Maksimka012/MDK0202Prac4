@@ -10,3 +10,4 @@ C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.csproj.CoreCompileIn
 C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.csproj.Up2Date
 C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.exe
 C:\Users\kotyl\Desktop\MDK0202Prac4\Server\obj\Debug\Server.pdb
+C:\Users\kotyl\Desktop\MDK0202Prac4\Server\bin\Debug\System.Data.SQLite.dll
