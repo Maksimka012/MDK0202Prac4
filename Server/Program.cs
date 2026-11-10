@@ -12,30 +12,23 @@ namespace Server
 {
     internal class Program
     {
-        public static List<User> Users = new List<User>();
         public static IPAddress IpAdress;
         public static int Port;
 
-        public static bool AutorizationUser(string login, string password)
-        {
-            User user = Users.Find(x => x.login == login && x.password == password);
-            return user != null;
-        }
+        // Храним текущий путь для каждого авторизованного пользователя по его Id
+        public static Dictionary<int, string> UserSessions = new Dictionary<int, string>();
 
-        // Исправленный метод получения директории
+        // Получение списка файлов и папок (без изменений)
         public static List<string> GetDirectory(string src)
         {
             List<string> FoldersFiles = new List<string>();
             if (Directory.Exists(src))
             {
-                // Получаем папки
                 string[] dirs = Directory.GetDirectories(src);
                 foreach (string dir in dirs)
                 {
-                    // Берем только имя папки, а не полный путь
                     FoldersFiles.Add(Path.GetFileName(dir) + "/");
                 }
-                // Получаем файлы
                 string[] files = Directory.GetFiles(src);
                 foreach (string file in files)
                 {
@@ -48,15 +41,12 @@ namespace Server
         public static void StartServer()
         {
             IPEndPoint endPoint = new IPEndPoint(IpAdress, Port);
-            Socket sListner = new Socket(
-                AddressFamily.InterNetwork,
-                SocketType.Stream,
-                ProtocolType.Tcp
-                );
+            Socket sListner = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             sListner.Bind(endPoint);
             sListner.Listen(10);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("Сервер запущен.");
+
             while (true)
             {
                 try
@@ -66,7 +56,8 @@ namespace Server
                     byte[] Bytes = new byte[10485760];
                     int BytesRec = Handler.Receive(Bytes);
                     Data += Encoding.UTF8.GetString(Bytes, 0, BytesRec);
-                    Console.Write("Сообщение от пользователя: " + Data + "\n");
+                    Console.Write($"\n[{DateTime.Now:HH:mm:ss}] Сообщение от пользователя: " + Data + "\n");
+
                     string Reply = "";
                     ViewModelSend ViewModelSend = JsonConvert.DeserializeObject<ViewModelSend>(Data);
 
@@ -75,18 +66,26 @@ namespace Server
                         ViewModelMessage viewModelMessage = null;
                         string[] DataCommand = ViewModelSend.Message.Split(new string[1] { " " }, StringSplitOptions.RemoveEmptyEntries);
 
-                        // Проверка на пустую команду
                         if (DataCommand.Length == 0) continue;
+
+                        // Логируем команду в БД (если пользователь авторизован)
+                        if (ViewModelSend.Id != -1)
+                        {
+                            Database.LogCommand(ViewModelSend.Id, ViewModelSend.Message);
+                        }
 
                         if (DataCommand[0] == "connect")
                         {
-                            // ИСПРАВЛЕНИЕ: Проверка на наличие логина и пароля
                             if (DataCommand.Length >= 3)
                             {
-                                if (AutorizationUser(DataCommand[1], DataCommand[2]))
+                                int userId = Database.AuthorizeUser(DataCommand[1], DataCommand[2]);
+                                if (userId != -1)
                                 {
-                                    int IdUser = Users.FindIndex(x => x.login == DataCommand[1] && x.password == DataCommand[2]);
-                                    viewModelMessage = new ViewModelMessage("autorization", IdUser.ToString());
+                                    // Запоминаем, что этот пользователь авторизован и его корневую папку
+                                    UserSessions[userId] = Database.GetRootPath(userId);
+
+                                    viewModelMessage = new ViewModelMessage("autorization", userId.ToString());
+                                    Console.WriteLine($"[INFO] Пользователь {DataCommand[1]} вошел. ID: {userId}");
                                 }
                                 else
                                 {
@@ -100,29 +99,26 @@ namespace Server
                         }
                         else if (DataCommand[0] == "cd")
                         {
-                            if (ViewModelSend.Id != -1)
+                            if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
                             {
+                                string currentSrc = UserSessions[ViewModelSend.Id];
                                 List<string> FoldersFiles = new List<string>();
-                                string currentSrc = Users[ViewModelSend.Id].temp_src;
 
                                 if (DataCommand.Length == 1)
                                 {
-                                    // Команда cd без аргументов - возврат в корень
-                                    Users[ViewModelSend.Id].temp_src = Users[ViewModelSend.Id].src;
-                                    FoldersFiles = GetDirectory(Users[ViewModelSend.Id].src);
+                                    // Возврат в корень
+                                    string root = Database.GetRootPath(ViewModelSend.Id);
+                                    UserSessions[ViewModelSend.Id] = root;
+                                    FoldersFiles = GetDirectory(root);
                                 }
                                 else
                                 {
-                                    // Собираем имя папки (может содержать пробелы)
                                     string cdFolder = string.Join(" ", DataCommand.Skip(1));
-
-                                    // ИСПРАВЛЕНИЕ: Используем Path.Combine для правильного склеивания путей
                                     string newPath = Path.Combine(currentSrc, cdFolder);
 
-                                    // Проверяем, существует ли такая папка
                                     if (Directory.Exists(newPath))
                                     {
-                                        Users[ViewModelSend.Id].temp_src = newPath;
+                                        UserSessions[ViewModelSend.Id] = newPath;
                                         FoldersFiles = GetDirectory(newPath);
                                     }
                                     else
@@ -144,13 +140,12 @@ namespace Server
                         }
                         else if (DataCommand[0] == "get")
                         {
-                            if (ViewModelSend.Id != -1)
+                            if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
                             {
                                 if (DataCommand.Length >= 2)
                                 {
                                     string getFile = string.Join(" ", DataCommand.Skip(1));
-                                    // ИСПРАВЛЕНИЕ: Правильное объединение пути
-                                    string fullPath = Path.Combine(Users[ViewModelSend.Id].temp_src, getFile);
+                                    string fullPath = Path.Combine(UserSessions[ViewModelSend.Id], getFile);
 
                                     if (File.Exists(fullPath))
                                     {
@@ -174,17 +169,15 @@ namespace Server
                         }
                         else if (DataCommand[0] == "set")
                         {
-                            // ИСПРАВЛЕНИЕ: Обработка команды set (загрузка файла)
-                            // Раньше это было в else, из-за чего падал парсер JSON
-                            if (ViewModelSend.Id != -1)
+                            if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
                             {
-                                // Здесь Message должен содержать JSON с FileInfoFTP
                                 try
                                 {
+                                    // Клиент должен прислать JSON с данными файла
                                     FileInfoFTP SendFileInfo = JsonConvert.DeserializeObject<FileInfoFTP>(ViewModelSend.Message);
                                     if (SendFileInfo != null)
                                     {
-                                        string savePath = Path.Combine(Users[ViewModelSend.Id].temp_src, SendFileInfo.Name);
+                                        string savePath = Path.Combine(UserSessions[ViewModelSend.Id], SendFileInfo.Name);
                                         File.WriteAllBytes(savePath, SendFileInfo.Data);
                                         viewModelMessage = new ViewModelMessage("message", "Файл загружен");
                                     }
@@ -205,11 +198,9 @@ namespace Server
                         }
                         else
                         {
-                            // Неизвестная команда
                             viewModelMessage = new ViewModelMessage("message", "Неизвестная команда");
                         }
 
-                        // Отправка ответа (вынесено за пределы if/else, чтобы отправлялся всегда)
                         if (viewModelMessage != null)
                         {
                             Reply = JsonConvert.SerializeObject(viewModelMessage);
@@ -222,7 +213,6 @@ namespace Server
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine(ex.ToString());
-                    // Не забываем сбрасывать цвет обратно, чтобы консоль не была полностью красной
                     Console.ForegroundColor = ConsoleColor.Green;
                 }
             }
@@ -230,14 +220,25 @@ namespace Server
 
         static void Main(string[] args)
         {
-            // ВНИМАНИЕ: Убедитесь, что путь A:\Авиатехникум существует на вашем ПК,
-            // иначе тесты не пройдут. Для теста лучше использовать реальную папку, например C:\Test
-            Users.Add(new User("aoshcepkov", "Asdfg123", @"C:\Users\kotyl\Desktop\MDK0202Prac4")); // Изменил путь для примера, проверьте свой
+            // 1. Инициализируем БД (создаст файл ftp.db, если его нет)
+            Database.Initialize();
+
+            // 2. Добавляем пользователя в БД. Если он уже есть — ничего не произойдет.
+            string rootPath = @"C:\Users\kotyl\Desktop\MDK0202Prac4";
+
+            // Проверка на существование папки, чтобы не было ошибок
+            if (!Directory.Exists(rootPath))
+            {
+                Console.WriteLine($"ВНИМАНИЕ: Папка {rootPath} не существует.");
+            }
+
+            Database.AddUser("aoshcepkov", "Asdfg123", rootPath);
 
             Console.Write("Введите IP адрес сервера: ");
             string sIpAddress = Console.ReadLine();
             Console.Write($"Введите порт: ");
             string sPort = Console.ReadLine();
+
             if (int.TryParse(sPort, out Port) && IPAddress.TryParse(sIpAddress, out IpAdress))
             {
                 Console.ForegroundColor = ConsoleColor.Green;
