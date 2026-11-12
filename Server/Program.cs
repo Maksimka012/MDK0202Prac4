@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using Common;
 using Newtonsoft.Json;
 
@@ -52,164 +53,185 @@ namespace Server
                 try
                 {
                     Socket Handler = sListner.Accept();
-                    string Data = null;
-                    byte[] Bytes = new byte[10485760];
-                    int BytesRec = Handler.Receive(Bytes);
-                    Data += Encoding.UTF8.GetString(Bytes, 0, BytesRec);
-                    Console.Write($"\n[{DateTime.Now:HH:mm:ss}] Сообщение от пользователя: " + Data + "\n");
 
-                    string Reply = "";
-                    ViewModelSend ViewModelSend = JsonConvert.DeserializeObject<ViewModelSend>(Data);
-
-                    if (ViewModelSend != null)
+                    Task.Run(() =>
                     {
-                        ViewModelMessage viewModelMessage = null;
-                        string[] DataCommand = ViewModelSend.Message.Split(new string[1] { " " }, StringSplitOptions.RemoveEmptyEntries);
-
-                        if (DataCommand.Length == 0) continue;
-
-                        // Логируем команду в БД (если пользователь авторизован)
-                        if (ViewModelSend.Id != -1)
+                        try
                         {
-                            Database.LogCommand(ViewModelSend.Id, ViewModelSend.Message);
-                        }
-
-                        if (DataCommand[0] == "connect")
-                        {
-                            if (DataCommand.Length >= 3)
+                            while (Handler.Connected)
                             {
-                                int userId = Database.AuthorizeUser(DataCommand[1], DataCommand[2]);
-                                if (userId != -1)
-                                {
-                                    // Запоминаем, что этот пользователь авторизован и его корневую папку
-                                    UserSessions[userId] = Database.GetRootPath(userId);
+                                string Data = null;
+                                byte[] Bytes = new byte[10485760];
+                                int BytesRec = Handler.Receive(Bytes);
+                                if (BytesRec == 0) break;
+                                Data += Encoding.UTF8.GetString(Bytes, 0, BytesRec);
+                                Console.Write($"\n[{DateTime.Now:HH:mm:ss}] Сообщение от пользователя: " + Data + "\n");
 
-                                    viewModelMessage = new ViewModelMessage("autorization", userId.ToString());
-                                    Console.WriteLine($"[INFO] Пользователь {DataCommand[1]} вошел. ID: {userId}");
-                                }
-                                else
-                                {
-                                    viewModelMessage = new ViewModelMessage("message", "Не правильный логин или пароль пользователя");
-                                }
-                            }
-                            else
-                            {
-                                viewModelMessage = new ViewModelMessage("message", "Использование: connect [login] [password]");
-                            }
-                        }
-                        else if (DataCommand[0] == "cd")
-                        {
-                            if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
-                            {
-                                string currentSrc = UserSessions[ViewModelSend.Id];
-                                List<string> FoldersFiles = new List<string>();
+                                string Reply = "";
+                                ViewModelSend ViewModelSend = JsonConvert.DeserializeObject<ViewModelSend>(Data);
 
-                                if (DataCommand.Length == 1)
+                                if (ViewModelSend != null)
                                 {
-                                    // Возврат в корень
-                                    string root = Database.GetRootPath(ViewModelSend.Id);
-                                    UserSessions[ViewModelSend.Id] = root;
-                                    FoldersFiles = GetDirectory(root);
-                                }
-                                else
-                                {
-                                    string cdFolder = string.Join(" ", DataCommand.Skip(1));
-                                    string newPath = Path.Combine(currentSrc, cdFolder);
+                                    ViewModelMessage viewModelMessage = null;
+                                    string[] DataCommand = ViewModelSend.Message.Split(new string[1] { " " }, StringSplitOptions.RemoveEmptyEntries);
 
-                                    if (Directory.Exists(newPath))
+                                    if (DataCommand.Length == 0) continue;
+
+                                    // Логируем команду в БД (если пользователь авторизован)
+                                    if (ViewModelSend.Id != -1)
                                     {
-                                        UserSessions[ViewModelSend.Id] = newPath;
-                                        FoldersFiles = GetDirectory(newPath);
+                                        Database.LogCommand(ViewModelSend.Id, ViewModelSend.Message);
+                                    }
+
+                                    if (DataCommand[0] == "connect")
+                                    {
+                                        if (DataCommand.Length >= 3)
+                                        {
+                                            int userId = Database.AuthorizeUser(DataCommand[1], DataCommand[2]);
+                                            if (userId != -1)
+                                            {
+                                                // Запоминаем, что этот пользователь авторизован и его корневую папку
+                                                UserSessions[userId] = Database.GetRootPath(userId);
+
+                                                viewModelMessage = new ViewModelMessage("autorization", userId.ToString());
+                                                Console.WriteLine($"[INFO] Пользователь {DataCommand[1]} вошел. ID: {userId}");
+                                            }
+                                            else
+                                            {
+                                                viewModelMessage = new ViewModelMessage("message", "Не правильный логин или пароль пользователя");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            viewModelMessage = new ViewModelMessage("message", "Использование: connect [login] [password]");
+                                        }
+                                    }
+                                    else if (DataCommand[0] == "cd")
+                                    {
+                                        if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
+                                        {
+                                            string currentSrc = UserSessions[ViewModelSend.Id];
+                                            List<string> FoldersFiles = new List<string>();
+
+                                            if (DataCommand.Length == 1)
+                                            {
+                                                // Возврат в корень
+                                                string root = Database.GetRootPath(ViewModelSend.Id);
+                                                UserSessions[ViewModelSend.Id] = root;
+                                                FoldersFiles = GetDirectory(root);
+                                            }
+                                            else
+                                            {
+                                                string cdFolder = string.Join(" ", DataCommand.Skip(1));
+                                                string newPath = Path.Combine(currentSrc, cdFolder);
+
+                                                if (Directory.Exists(newPath))
+                                                {
+                                                    UserSessions[ViewModelSend.Id] = newPath;
+                                                    FoldersFiles = GetDirectory(newPath);
+                                                }
+                                                else
+                                                {
+                                                    viewModelMessage = new ViewModelMessage("message", "Директория не существует");
+                                                }
+                                            }
+
+                                            if (viewModelMessage == null)
+                                            {
+                                                if (FoldersFiles.Count == 0)
+                                                    viewModelMessage = new ViewModelMessage("message", "Директория пуста");
+                                                else
+                                                    viewModelMessage = new ViewModelMessage("cd", JsonConvert.SerializeObject(FoldersFiles));
+                                            }
+                                        }
+                                        else
+                                            viewModelMessage = new ViewModelMessage("message", "Необходимо авторизоваться");
+                                    }
+                                    else if (DataCommand[0] == "get")
+                                    {
+                                        if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
+                                        {
+                                            if (DataCommand.Length >= 2)
+                                            {
+                                                string getFile = string.Join(" ", DataCommand.Skip(1));
+                                                string fullPath = Path.Combine(UserSessions[ViewModelSend.Id], getFile);
+
+                                                if (File.Exists(fullPath))
+                                                {
+                                                    byte[] byteFile = File.ReadAllBytes(fullPath);
+                                                    viewModelMessage = new ViewModelMessage("file", JsonConvert.SerializeObject(byteFile));
+                                                }
+                                                else
+                                                {
+                                                    viewModelMessage = new ViewModelMessage("message", "Файл не найден: " + fullPath);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                viewModelMessage = new ViewModelMessage("message", "Использование: get [NameFile]");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            viewModelMessage = new ViewModelMessage("message", "Необходимо авторизоваться");
+                                        }
+                                    }
+                                    else if (DataCommand[0] == "set")
+                                    {
+                                        if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
+                                        {
+                                            try
+                                            {
+                                                string jsonPart = ViewModelSend.Message.Substring(4).Trim();
+                                                // Клиент должен прислать JSON с данными файла
+                                                FileInfoFTP SendFileInfo = JsonConvert.DeserializeObject<FileInfoFTP>(jsonPart);
+                                                if (SendFileInfo != null)
+                                                {
+                                                    string savePath = Path.Combine(UserSessions[ViewModelSend.Id], SendFileInfo.Name);
+                                                    File.WriteAllBytes(savePath, SendFileInfo.Data);
+                                                    viewModelMessage = new ViewModelMessage("message", "Файл загружен");
+                                                }
+                                                else
+                                                {
+                                                    viewModelMessage = new ViewModelMessage("message", "Ошибка формата данных файла");
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                viewModelMessage = new ViewModelMessage("message", "Ошибка загрузки файла (неверный формат JSON)");
+                                                Console.WriteLine("ОШИБКА: " + ex.Message);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            viewModelMessage = new ViewModelMessage("message", "Необходимо авторизоваться");
+                                        }
                                     }
                                     else
                                     {
-                                        viewModelMessage = new ViewModelMessage("message", "Директория не существует");
+                                        viewModelMessage = new ViewModelMessage("message", "Неизвестная команда");
                                     }
-                                }
 
-                                if (viewModelMessage == null)
-                                {
-                                    if (FoldersFiles.Count == 0)
-                                        viewModelMessage = new ViewModelMessage("message", "Директория пуста");
-                                    else
-                                        viewModelMessage = new ViewModelMessage("cd", JsonConvert.SerializeObject(FoldersFiles));
-                                }
-                            }
-                            else
-                                viewModelMessage = new ViewModelMessage("message", "Необходимо авторизоваться");
-                        }
-                        else if (DataCommand[0] == "get")
-                        {
-                            if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
-                            {
-                                if (DataCommand.Length >= 2)
-                                {
-                                    string getFile = string.Join(" ", DataCommand.Skip(1));
-                                    string fullPath = Path.Combine(UserSessions[ViewModelSend.Id], getFile);
-
-                                    if (File.Exists(fullPath))
+                                    if (viewModelMessage != null)
                                     {
-                                        byte[] byteFile = File.ReadAllBytes(fullPath);
-                                        viewModelMessage = new ViewModelMessage("file", JsonConvert.SerializeObject(byteFile));
-                                    }
-                                    else
-                                    {
-                                        viewModelMessage = new ViewModelMessage("message", "Файл не найден: " + fullPath);
+                                        Reply = JsonConvert.SerializeObject(viewModelMessage);
+                                        byte[] message = Encoding.UTF8.GetBytes(Reply);
+                                        Handler.Send(message);
                                     }
                                 }
-                                else
-                                {
-                                    viewModelMessage = new ViewModelMessage("message", "Использование: get [NameFile]");
-                                }
-                            }
-                            else
-                            {
-                                viewModelMessage = new ViewModelMessage("message", "Необходимо авторизоваться");
                             }
                         }
-                        else if (DataCommand[0] == "set")
+                        catch (Exception ex)
                         {
-                            if (ViewModelSend.Id != -1 && UserSessions.ContainsKey(ViewModelSend.Id))
-                            {
-                                try
-                                {
-                                    string jsonPart = ViewModelSend.Message.Substring(4).Trim();
-                                    // Клиент должен прислать JSON с данными файла
-                                    FileInfoFTP SendFileInfo = JsonConvert.DeserializeObject<FileInfoFTP>(jsonPart);
-                                    if (SendFileInfo != null)
-                                    {
-                                        string savePath = Path.Combine(UserSessions[ViewModelSend.Id], SendFileInfo.Name);
-                                        File.WriteAllBytes(savePath, SendFileInfo.Data);
-                                        viewModelMessage = new ViewModelMessage("message", "Файл загружен");
-                                    }
-                                    else
-                                    {
-                                        viewModelMessage = new ViewModelMessage("message", "Ошибка формата данных файла");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    viewModelMessage = new ViewModelMessage("message", "Ошибка загрузки файла (неверный формат JSON)");
-                                    Console.WriteLine("ОШИБКА: " + ex.Message);
-                                }
-                            }
-                            else
-                            {
-                                viewModelMessage = new ViewModelMessage("message", "Необходимо авторизоваться");
-                            }
+                            Console.WriteLine("Ошибка: " + ex.Message);
                         }
-                        else
+                        finally
                         {
-                            viewModelMessage = new ViewModelMessage("message", "Неизвестная команда");
+                            Handler.Close();
                         }
-
-                        if (viewModelMessage != null)
-                        {
-                            Reply = JsonConvert.SerializeObject(viewModelMessage);
-                            byte[] message = Encoding.UTF8.GetBytes(Reply);
-                            Handler.Send(message);
-                        }
-                    }
+                    });
+                    
+                        
                 }
                 catch (Exception ex)
                 {

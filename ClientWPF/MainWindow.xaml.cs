@@ -30,12 +30,13 @@ namespace ClientWPF
         public static int Port;
         public static int Id = 1;
         Socket socket;
+        ViewModelSend viewModelSend;
         public MainWindow()
         {
             InitializeComponent();
         }
 
-        private void BtnConnect_Click(object sender, RoutedEventArgs e)
+        private async void BtnConnect_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -50,32 +51,81 @@ namespace ClientWPF
                         AddressFamily.InterNetwork,
                         SocketType.Stream,
                         ProtocolType.Tcp);
-                    socket.Connect(endPoint);
+                    await socket.ConnectAsync(endPoint);
                     if (socket.Connected)
                     {
+                        string login = tbLogin.Text;
+                        string pass = tbPass.Password;
+                        ViewModelMessage viewModelMessage = await Task.Run(() => Send($"connect {login} {pass}"));
+
+                        if (viewModelMessage.Command == "autorization")
+                        {
+                            Id = int.Parse(viewModelMessage.Data);
+                            ViewModelMessage view = await Task.Run(() => Send("cd"));
+
+                            if (view.Command == "cd")
+                            {
+                                var list = JsonConvert.DeserializeObject<List<string>>(view.Data);
+                                Dispatcher.Invoke(() => { lvFiles.ItemsSource = list; });
+                            }
+                            else if (view.Command == "message")
+                            {
+                                MessageBox.Show("Ошибка: " + view.Data);
+                            }
+                        }                        
+                    }
+                    else
+                    {
                         MessageBox.Show("Подключение не удалось(");
-                        Send($"connect {sIpAddres} {sPort}");
                     }
                 }
             }
             catch (Exception exp)
             {
                 MessageBox.Show("Что-то случилось: " + exp.Message);
+            }            
+        }
+
+        private async void BtnBack_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModelMessage view = await Task.Run(() => Send("cd .."));
+            if (view.Command == "cd")
+                lvFiles.ItemsSource = JsonConvert.DeserializeObject<List<string>>(view.Data);
+            else if (view.Command == "message")
+                MessageBox.Show(view.Data);
+        }
+
+        private async void BtnDownload_Click(object sender, RoutedEventArgs e)
+        {
+            if (lvFiles.SelectedItem == null) return;
+            string file = lvFiles.SelectedItem.ToString();
+            if (file.EndsWith("/")) 
+            { 
+                MessageBox.Show("Это папка!"); 
+                return; 
             }
-            
+            ViewModelMessage view = await Task.Run(() => Send($"get {file}"));
+
+            if (view.Command == "file")
+            {
+                string[] DataMessage = viewModelSend.Message.Split(new string[1] { " " }, StringSplitOptions.None);
+                string getFile = "";
+                for (int i = 1; i < DataMessage.Length; i++)
+                {
+                    if (getFile == "")
+                        getFile = DataMessage[i];
+                    else
+                        getFile += " " + DataMessage[i];
+                }
+
+                byte[] bytesFile = JsonConvert.DeserializeObject<byte[]>(view.Data);
+                File.WriteAllBytes(getFile, bytesFile);
+            }
+            else if (view.Command == "message")
+                MessageBox.Show(view.Data);
         }
 
-        private void BtnBack_Click(object sender, RoutedEventArgs e)
-        {
-            Send("cd ..");
-        }
-
-        private void BtnDownload_Click(object sender, RoutedEventArgs e)
-        {
-            Send($"get {lvFiles.SelectedItem}");
-        }
-
-        private void BtnUpload_Click(object sender, RoutedEventArgs e)
+        private async void BtnUpload_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
             if (ofd.ShowDialog() == true)
@@ -84,59 +134,42 @@ namespace ClientWPF
                 FileInfo fileInfo = new FileInfo(fileName);
                 FileInfoFTP newFileInfo = new FileInfoFTP(File.ReadAllBytes(fileName), fileInfo.Name);
                 var jsonFile = JsonConvert.SerializeObject(newFileInfo);
-                Send($"set {jsonFile}");
-
+                ViewModelMessage view = await Task.Run(() => Send($"set {jsonFile}"));
+                if (view != null) MessageBox.Show(view.Data);
             }
         }
 
-        private void MouseDoubleClick_toDirectory(object sender, MouseButtonEventArgs e)
+        private async void MouseDoubleClick_toDirectory(object sender, MouseButtonEventArgs e)
         {
-            Send($"cd {lvFiles.SelectedItem.ToString().TrimEnd('/')}");
+            if (lvFiles.SelectedItem == null) return;
+            string selected = lvFiles.SelectedItem.ToString();
+            if (selected.EndsWith("/"))
+            {
+                string folder = selected.TrimEnd('/');
+                ViewModelMessage view = await Task.Run(() => Send($"cd {folder}"));
+                if(view.Command == "cd")
+                    lvFiles.ItemsSource = JsonConvert.DeserializeObject<List<string>>(view.Data);
+                else if (view.Command == "message")
+                    MessageBox.Show(view.Data);
+            }
         }
 
-        public void Send(string message)
+        public ViewModelMessage Send(string message)
         {
             try
             {
-                if (socket.Connected)
-                {
-                    ViewModelSend viewModelSend = new ViewModelSend(message, Id);
-                    socket.Send(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(viewModelSend)));
-                    byte[] bytes = new byte[10485760];
-                    int bytesRec = socket.Receive(bytes);
-                    string messageServer = Encoding.UTF8.GetString(bytes, 0, bytesRec);
-                    ViewModelMessage viewModelMessage = JsonConvert.DeserializeObject<ViewModelMessage>(messageServer);
-
-                    if (viewModelMessage.Command == "autorization")
-                    {
-                        Id = int.Parse(viewModelMessage.Data);
-                        Send("cd");
-                    }
-                    else if (viewModelMessage.Command == "message")
-                        MessageBox.Show(viewModelMessage.Data);
-                    else if (viewModelMessage.Command == "cd")
-                    {
-                        lvFiles.ItemsSource = JsonConvert.DeserializeObject<List<string>>(viewModelMessage.Data);
-                    }
-                    else if (viewModelMessage.Command == "file")
-                    {
-                        SaveFileDialog sfd = new SaveFileDialog();
-                        if (sfd.ShowDialog() == true)
-                        {
-                            string nameFile = sfd.FileName;
-                            byte[] bytesFile = JsonConvert.DeserializeObject<byte[]>(viewModelMessage.Data);
-                            File.WriteAllBytes(nameFile, bytesFile);
-                            MessageBox.Show("Файл загружен");
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Подключение не удалось(");
-                }
+                viewModelSend = new ViewModelSend(message, Id);
+                socket.Send(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(viewModelSend)));
+                byte[] bytes = new byte[10485760];
+                int bytesRec = socket.Receive(bytes);
+                string messageServer = Encoding.UTF8.GetString(bytes, 0, bytesRec);
+                System.Diagnostics.Debug.WriteLine("ПРИШЛО ОТ СЕРВЕРА: " + messageServer); 
+                ViewModelMessage viewModelMessage = JsonConvert.DeserializeObject<ViewModelMessage>(messageServer);
+                return viewModelMessage;
             }
-            catch (Exception ex) { 
-                MessageBox.Show($"Что-то случилось: {ex.Message}"); 
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"Что-то случилось в Send: {ex.Message}"); 
+                return null;
             }
         }
     }

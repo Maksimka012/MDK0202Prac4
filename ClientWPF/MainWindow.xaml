@@ -27,12 +27,12 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="10,0">
             <Button Content="⬆ Назад" Click="BtnBack_Click" Margin="0,0,10,0"/>
-            <Button Content="Скачать файл" Click="BtnDownload_Click" Margin="0,0,10,0"/>
-            <Button Content="Загрузить файл" Click="BtnUpload_Click"/>
+            <Button Content="Скачать файл (get)" Click="BtnDownload_Click" Margin="0,0,10,0"/>
+            <Button Content="Загрузить файл (set)" Click="BtnUpload_Click"/>
             <TextBlock x:Name="TbPath" VerticalAlignment="Center" Margin="20,0" FontWeight="Bold" Foreground="Gray"/>
         </StackPanel>
 
-        <ListView x:Name="lvFiles" Grid.Row="2" Margin="10" 
+        <ListView x:Name="lvFiles" DisplayMemberPath="." Grid.Row="2" Margin="10" 
                   MouseDoubleClick="MouseDoubleClick_toDirectory">
             <ListView.View>
                 <GridView>
